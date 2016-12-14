@@ -6,7 +6,7 @@ var express    = require('express');
 var bodyParser = require('body-parser');
 var app        = express();
 var morgan     = require('morgan');
-
+const console = require('console')
 // configure app
 app.use(morgan('dev')); // log requests to the console
 
@@ -14,11 +14,12 @@ app.use(morgan('dev')); // log requests to the console
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var port     = process.env.PORT || 8080; // set our port
+var port     = process.env.PORT || 9081; // set our port
 
 var mongoose   = require('mongoose');
-mongoose.connect('mongodb://node:node@novus.modulusmongo.net:27017/Iganiq8o'); // connect to our database
+mongoose.connect('mongodb://localhost:27017'); // connect to our database
 var Bear     = require('./app/models/bear');
+var shell = require('./app/models/shell');
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -35,8 +36,23 @@ router.use(function(req, res, next) {
 
 // test route to make sure everything is working (accessed at GET http://localhost:8080/api)
 router.get('/', function(req, res) {
-	res.json({ message: 'hooray! welcome to our api!' });	
+	res.json({ message: 'hooray! welcome to our api!' });
+
 });
+
+
+router.get('/mongo/shell/:hostname/:port', function(req, res) {
+	console.log('get')
+	shell.connect(req.params.hostname, req.params.port)
+	res.json({ message: 'hooray! welcome to our api!' });
+});
+
+router.get('/mongo/shell/:command', function(req, res) {
+	console.log("got command "+req.params.command)
+	shell.command(req.params.command)
+
+});
+
 
 // on routes that end in /bears
 // ----------------------------------------------------
@@ -44,7 +60,7 @@ router.route('/bears')
 
 	// create a bear (accessed at POST http://localhost:8080/bears)
 	.post(function(req, res) {
-		
+
 		var bear = new Bear();		// create a new instance of the Bear model
 		bear.name = req.body.name;  // set the bears name (comes from the request)
 
@@ -55,7 +71,7 @@ router.route('/bears')
 			res.json({ message: 'Bear created!' });
 		});
 
-		
+
 	})
 
 	// get all the bears (accessed at GET http://localhost:8080/api/bears)
@@ -110,7 +126,6 @@ router.route('/bears/:bear_id')
 			res.json({ message: 'Successfully deleted' });
 		});
 	});
-
 
 // REGISTER OUR ROUTES -------------------------------
 app.use('/api', router);
